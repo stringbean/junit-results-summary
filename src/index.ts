@@ -23,9 +23,9 @@ async function run() {
   }
 
   const aggregatedReport = await aggregator.finaliseReport();
-  uploadReports(aggregatedReport, retentionDays);
-
   core.setOutput('test-results', aggregatedReport.report);
+
+  await uploadReports(aggregatedReport, retentionDays);
 }
 
 async function fetchReports(tmpDir: string): Promise<string[]> {

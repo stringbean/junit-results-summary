@@ -32547,7 +32547,7 @@ class ReportAggregator {
         const projectSummary = await this.loadProjectReport(name);
         appendReport(this.output.report, projectSummary);
         // copy html report & add to list of files
-        const projectReportFile = await this.copyProjectReport(name);
+        const projectReportFile = await this.copyProjectHtmlReport(name);
         this.output.files.push(projectReportFile);
     }
     async finaliseReport() {
@@ -32561,9 +32561,9 @@ class ReportAggregator {
         const data = await external_fs_.promises.readFile(summaryFile, { encoding: 'utf-8' });
         return JSON.parse(data);
     }
-    async copyProjectReport(name) {
+    async copyProjectHtmlReport(name) {
         const reportFile = await this.getReportPath(name, HTML_FILENAME);
-        const targetFile = external_path_.join(this.targetDir, `${name}-report.html`);
+        const targetFile = external_path_.join(this.targetDir, `${name.replace(/^test-report-/, '')}-report.html`);
         await io.cp(reportFile, targetFile);
         return targetFile;
     }
@@ -32611,8 +32611,8 @@ async function run() {
         await aggregator.addProject(report);
     }
     const aggregatedReport = await aggregator.finaliseReport();
-    uploadReports(aggregatedReport, retentionDays);
     core.setOutput('test-results', aggregatedReport.report);
+    await uploadReports(aggregatedReport, retentionDays);
 }
 async function fetchReports(tmpDir) {
     const artifacts = await ARTIFACT_CLIENT.downloadAllArtifacts(tmpDir);
