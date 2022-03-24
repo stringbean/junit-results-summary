@@ -1,15 +1,16 @@
 import * as io from '@actions/io';
 import * as path from 'path';
-import { appendReport, ProjectReport } from './model/ProjectReport';
+import { ProjectReport } from './model/ProjectReport';
 import { promises as fsPromises } from 'fs';
 import { format, formatDuration, intervalToDuration } from 'date-fns';
 import * as ejs from 'ejs';
+import { AggregateReport } from './model/AggregateReport';
 
 const SUMMARY_FILENAME = 'project-summary.json';
 const HTML_FILENAME = 'test-report.html';
 
 export interface GeneratedReport {
-  report: ProjectReport;
+  report: AggregateReport;
   basedir: string;
   files: string[];
 }
@@ -39,18 +40,7 @@ export class ReportAggregator {
     this.targetDir = path.join(tmpDir, 'aggregate-report');
 
     this.output = {
-      report: {
-        name: projectName,
-        summary: {
-          startTime: new Date(),
-          duration: 0,
-          tests: 0,
-          passed: 0,
-          failed: 0,
-          skipped: 0,
-        },
-        suites: [],
-      },
+      report: new AggregateReport(projectName),
       basedir: this.targetDir,
       files: [],
     };
@@ -62,7 +52,7 @@ export class ReportAggregator {
     // load summary & combine add it to the summary
     const projectSummary = await this.loadProjectReport(name);
 
-    appendReport(this.output.report, projectSummary);
+    this.output.report.addReport(projectSummary);
 
     // copy html report & add to list of files
     const projectReportFile = await this.copyProjectHtmlReport(name);

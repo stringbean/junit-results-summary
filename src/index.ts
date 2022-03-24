@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import * as github from '@actions/github';
 import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -11,12 +12,13 @@ const ARTIFACT_CLIENT = artifact.create();
 
 async function run() {
   const retentionDays = getNumberInput('retention-days');
+  // TODO name override
 
   const tmpDir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'junit-results-summary-'));
 
   const reportFiles = await fetchReports(tmpDir);
 
-  const aggregator = new ReportAggregator(tmpDir, 'TODO');
+  const aggregator = new ReportAggregator(tmpDir, github.context.workflow);
 
   for (const report of reportFiles) {
     await aggregator.addProject(report);
