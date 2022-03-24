@@ -1,0 +1,7 @@
+name: Junit Results
+description: Aggregator for JUnit reports
+author: Michael Stringer
+
+runs:
+  using: node16
+  main: dist/index.js
