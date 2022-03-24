@@ -2,6 +2,11 @@ name: Junit Results
 description: Aggregator for JUnit reports
 author: Michael Stringer
 
+inputs:
+  retention-days:
+    description: Number of days to retain report artifact for
+    required: false
+
 runs:
   using: node16
   main: dist/index.js

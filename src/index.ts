@@ -3,11 +3,15 @@ import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as artifact from '@actions/artifact';
-import { ReportAggregator } from './ReportAggregator';
+import { GeneratedReport, ReportAggregator } from './ReportAggregator';
 
 const REPORT_PREFIX = 'test-report-';
 
+const ARTIFACT_CLIENT = artifact.create();
+
 async function run() {
+  const retentionDays = getNumberInput('retention-days');
+
   const tmpDir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'junit-results-summary-'));
 
   const reportFiles = await fetchReports(tmpDir);
@@ -18,20 +22,35 @@ async function run() {
     await aggregator.addProject(report);
   }
 
-  // todo append reports
-
   const aggregatedReport = await aggregator.finaliseReport();
+  uploadReports(aggregatedReport, retentionDays);
 
   core.setOutput('test-results', aggregatedReport.report);
 }
 
 async function fetchReports(tmpDir: string): Promise<string[]> {
-  const artifactClient = artifact.create();
-  const artifacts = await artifactClient.downloadAllArtifacts(tmpDir);
+  const artifacts = await ARTIFACT_CLIENT.downloadAllArtifacts(tmpDir);
 
   return artifacts
     .map((artifact) => artifact.artifactName)
     .filter((name) => name.startsWith(REPORT_PREFIX));
+}
+
+async function uploadReports(
+  report: GeneratedReport,
+  retentionDays: number | undefined,
+): Promise<void> {
+  await ARTIFACT_CLIENT.uploadArtifact('summary-test-report', report.files, report.basedir, {
+    retentionDays,
+  });
+}
+
+function getNumberInput(key: string): number | undefined {
+  const raw = core.getInput(key);
+
+  if (raw) {
+    return parseInt(raw, 10);
+  }
 }
 
 run().catch((error) => {
