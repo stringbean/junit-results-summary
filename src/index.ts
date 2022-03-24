@@ -3,6 +3,7 @@ import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as artifact from '@actions/artifact';
+import { ReportAggregator } from './ReportAggregator';
 
 const REPORT_PREFIX = 'test-report-';
 
@@ -11,7 +12,17 @@ async function run() {
 
   const reportFiles = await fetchReports(tmpDir);
 
-  console.log('downloaded', reportFiles);
+  const aggregator = new ReportAggregator(tmpDir, 'TODO');
+
+  for (const report of reportFiles) {
+    await aggregator.addProject(report);
+  }
+
+  // todo append reports
+
+  const aggregatedReport = await aggregator.finaliseReport();
+
+  core.setOutput('test-results', aggregatedReport.report);
 }
 
 async function fetchReports(tmpDir: string): Promise<string[]> {
